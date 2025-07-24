@@ -7,7 +7,7 @@ const userSchema = z.object({
   id: z.number(),
   nome: z.string(),
   email: z.string().email(),
-  tipo: z.enum(['revenda', 'streaming']),
+  tipo: z.enum(['revenda', 'streaming']).optional(),
   streamings: z.number(),
   espectadores: z.number(),
   bitrate: z.number(),
@@ -64,7 +64,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (response.ok) {
         const userData = await response.json();
-        const validatedUser = userSchema.parse(userData);
+        // Garantir que o tipo seja definido se não estiver presente
+        const userDataWithType = {
+          ...userData,
+          tipo: userData.tipo || 'streaming' // Valor padrão se não estiver definido
+        };
+        const validatedUser = userSchema.parse(userDataWithType);
         setUser(validatedUser);
         setIsAuthenticated(true);
       } else {
@@ -100,7 +105,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.success && data.token && data.user) {
         localStorage.setItem('auth_token', data.token);
-        const validatedUser = userSchema.parse(data.user);
+        // Garantir que o tipo seja definido
+        const userDataWithType = {
+          ...data.user,
+          tipo: data.user.tipo || 'streaming'
+        };
+        const validatedUser = userSchema.parse(userDataWithType);
         setUser(validatedUser);
         setIsAuthenticated(true);
         navigate('/dashboard');

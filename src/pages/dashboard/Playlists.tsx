@@ -438,7 +438,7 @@ const Playlists: React.FC = () => {
             onClick={(e) => {
               e.stopPropagation();
               if (video.url) {
-                setVideoPlayerSrc(video.url);
+                setVideoPlayerSrc(getVideoUrl(video.url));
                 setVideoPlayerModalOpen(true);
               }
             }}
@@ -480,6 +480,24 @@ const Playlists: React.FC = () => {
       .map(v => String(v).padStart(2, '0'))
       .join(':');
 
+  // Função para construir URL correta do vídeo
+  const getVideoUrl = (url: string) => {
+    if (!url) return '';
+    
+    // Se já é uma URL completa, usar como está
+    if (url.startsWith('http')) {
+      return url;
+    }
+    
+    // Verificar se estamos em produção ou desenvolvimento
+    const isProduction = window.location.hostname !== 'localhost';
+    const baseUrl = isProduction ? 'http://samhost.wcore.com.br' : window.location.origin;
+    
+    // Garantir que a URL comece com /content
+    const videoPath = url.startsWith('/content') ? url : `/content${url}`;
+    return `${baseUrl}${videoPath}`;
+  };
+
   const abrirPlayerPlaylist = async (playlistId: number) => {
     setPlaylistVideosToPlay([]);
     setPlaylistPlayerIndex(0);
@@ -500,7 +518,10 @@ const Playlists: React.FC = () => {
       }
 
       const playlistVideos = await response.json();
-      const videos: Video[] = playlistVideos.map((item: any) => item.videos);
+      const videos: Video[] = playlistVideos.map((item: any) => ({
+        ...item.videos,
+        url: item.videos.url ? getVideoUrl(item.videos.url) : ''
+      }));
       
       setPlaylistVideosToPlay(videos);
       setPlaylistPlayerIndex(0);
@@ -509,11 +530,11 @@ const Playlists: React.FC = () => {
       console.error('Erro ao carregar playlist:', error);
       toast.error('Erro ao carregar vídeos da playlist');
     }
-  };
 
   useEffect(() => {
     if (playlistVideosToPlay.length > 0 && videoPlayerModalOpen) {
-      setVideoPlayerSrc(playlistVideosToPlay[playlistPlayerIndex]?.url || '');
+      const currentVideo = playlistVideosToPlay[playlistPlayerIndex];
+      setVideoPlayerSrc(currentVideo?.url ? getVideoUrl(currentVideo.url) : '');
     }
   }, [playlistPlayerIndex, playlistVideosToPlay, videoPlayerModalOpen]);
 

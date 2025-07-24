@@ -84,7 +84,7 @@ router.get('/', authMiddleware, async (req, res) => {
     // Ajustar URLs para serem acessíveis via HTTP
     const videos = rows.map(video => ({
       ...video,
-      url: video.url ? `/content${video.url}` : null
+      url: video.url ? (video.url.startsWith('/content') ? video.url : `/content${video.url}`) : null
     }));
 
     res.json(videos);

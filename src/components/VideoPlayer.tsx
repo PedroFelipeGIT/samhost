@@ -51,7 +51,24 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ playlistVideo, onVideoEnd }) 
   };
   
   // Priorizar vídeo da playlist se fornecido, senão usar stream ao vivo
-  const videoSrc = playlistVideo?.url || 
+  const getVideoUrl = (url: string) => {
+    if (!url) return '';
+    
+    // Se já é uma URL completa, usar como está
+    if (url.startsWith('http')) {
+      return url;
+    }
+    
+    // Verificar se estamos em produção ou desenvolvimento
+    const isProduction = window.location.hostname !== 'localhost';
+    const baseUrl = isProduction ? 'http://samhost.wcore.com.br' : window.location.origin;
+    
+    // Garantir que a URL comece com /content
+    const videoPath = url.startsWith('/content') ? url : `/content${url}`;
+    return `${baseUrl}${videoPath}`;
+  };
+
+  const videoSrc = playlistVideo?.url ? getVideoUrl(playlistVideo.url) : 
     (streamData.isLive ? `http://samhost.wcore.com.br:1935/samhost/${userLogin}_live/playlist.m3u8` : 
      obsStreamActive ? obsStreamUrl : undefined);
 

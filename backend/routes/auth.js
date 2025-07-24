@@ -124,10 +124,33 @@ router.get('/me', async (req, res) => {
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    const [rows] = await db.execute(
-      'SELECT codigo, nome, email, streamings, espectadores, bitrate, espaco FROM revendas WHERE codigo = ? AND status = 1',
-      [decoded.userId]
-    );
+    let rows = [];
+    
+    // Buscar baseado no tipo de usuário
+    if (decoded.tipo === 'revenda') {
+      [rows] = await db.execute(
+        'SELECT codigo, nome, email, streamings, espectadores, bitrate, espaco, status, "revenda" as tipo FROM revendas WHERE codigo = ? AND status = 1',
+        [decoded.userId]
+      );
+    } else if (decoded.tipo === 'streaming') {
+      [rows] = await db.execute(
+        `SELECT 
+          s.codigo, 
+          s.identificacao as nome, 
+          s.email, 
+          1 as streamings, 
+          s.espectadores, 
+          s.bitrate, 
+          s.espaco, 
+          s.status,
+          "streaming" as tipo,
+          s.codigo_cliente,
+          s.codigo_servidor
+         FROM streamings s 
+         WHERE s.codigo = ? AND s.status = 1`,
+        [decoded.userId]
+      );
+    }
 
     if (rows.length === 0) {
       return res.status(401).json({ error: 'Usuário não encontrado' });
@@ -138,10 +161,13 @@ router.get('/me', async (req, res) => {
       id: user.codigo,
       nome: user.nome,
       email: user.email,
+      tipo: user.tipo,
       streamings: user.streamings,
       espectadores: user.espectadores,
       bitrate: user.bitrate,
-      espaco: user.espaco
+      espaco: user.espaco,
+      codigo_cliente: user.codigo_cliente || null,
+      codigo_servidor: user.codigo_servidor || null
     });
   } catch (error) {
     console.error('Erro ao buscar usuário:', error);

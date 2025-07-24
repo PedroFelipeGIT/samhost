@@ -53,7 +53,7 @@ const authMiddleware = async (req, res, next) => {
         id: user.codigo,
         nome: user.nome,
         email: user.email,
-        tipo: user.tipo,
+        tipo: user.tipo || 'streaming', // Valor padrão se não estiver definido
         streamings: user.streamings,
         espectadores: user.espectadores,
         bitrate: user.bitrate,

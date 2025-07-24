@@ -40,7 +40,24 @@
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   // Servir arquivos estáticos do Wowza
-  app.use('/content', express.static('/usr/local/WowzaStreamingEngine/content'));
+  app.use('/content', express.static('/usr/local/WowzaStreamingEngine/content', {
+    maxAge: '1h', // Cache por 1 hora
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, path) => {
+      // Configurar headers CORS para vídeos
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Range');
+      res.setHeader('Accept-Ranges', 'bytes');
+      
+      // Headers para cache de vídeos
+      if (path.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/i)) {
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Content-Type', 'video/mp4');
+      }
+    }
+  }));
   
   // Servir arquivos estáticos do frontend em produção
   if (isProduction) {
